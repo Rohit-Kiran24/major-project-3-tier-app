@@ -5,7 +5,7 @@ Entrypoint for Gunicorn. Initializes Flask, SocketIO, database, and blueprints.
 
 import os
 import logging
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect, url_for
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 from config import Config
@@ -110,9 +110,6 @@ socketio = SocketIO(
 
 # Register WebSocket event handlers
 register_socket_events(socketio)
-
-# Required imports for index route
-from flask import redirect, url_for
 
 # ======================== Dev Server ========================
 if __name__ == '__main__':
