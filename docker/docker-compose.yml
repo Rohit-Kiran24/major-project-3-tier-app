@@ -12,12 +12,12 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=chatapp
-      - DB_USER=chatadmin
-      - DB_PASS=localdev123
+      - DB_USER=${POSTGRES_USER:-chatadmin}
+      - DB_PASS=${POSTGRES_PASSWORD}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - USE_SECRETS_MANAGER=false
-      - SECRET_KEY=local-dev-secret-key
+      - SECRET_KEY=${FLASK_SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -28,9 +28,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=chatapp
-      - POSTGRES_USER=chatadmin
-      - POSTGRES_PASSWORD=localdev123
+      - POSTGRES_DB=${POSTGRES_DB:-chatapp}
+      - POSTGRES_USER=${POSTGRES_USER:-chatadmin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
