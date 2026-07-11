@@ -1,0 +1,80 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # ======================== Terraform Checks ========================
+  terraform:
+    name: Terraform Validate & Scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Checkov IaC Security Scan
+        run: checkov -d . --quiet --compact --framework terraform
+
+  # ======================== Application Checks ========================
+  application:
+    name: App Test & Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: pip install -r app/requirements.txt pytest
+
+      - name: Run Unit Tests
+        run: |
+          cd app
+          python -m pytest tests/ -v
+        env:
+          USE_SECRETS_MANAGER: "false"
+          DB_HOST: "localhost"
+          DB_NAME: "test"
+          DB_USER: "test"
+          DB_PASS: "test"
+
+      - name: Build Docker Image
+        run: docker build -t three-tier-chat:test -f docker/Dockerfile .
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Trivy Container Scan
+        run: trivy image --exit-code 0 --severity HIGH,CRITICAL three-tier-chat:test

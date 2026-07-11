@@ -1,0 +1,19 @@
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to git (it's in .gitignore)
+
+project_name = "three-tier-chat"
+aws_region   = "ap-south-1"
+environment  = "dev"
+alert_email  = "your-email@example.com"
+
+# Cost toggles (set true for production demo, false for dev)
+use_nat_gateway = false   # false = NAT Instance (~$8/mo), true = NAT Gateway (~$33/mo)
+rds_multi_az    = false   # false = Single-AZ, true = Multi-AZ (doubles cost)
+deploy_bastion  = false   # false = use SSM Session Manager (free)
+
+# Compute
+docker_image  = "rohitkiran24/three-tier-chat:latest"
+instance_type = "t2.micro"
+asg_desired   = 1
+asg_min       = 1
+asg_max       = 3

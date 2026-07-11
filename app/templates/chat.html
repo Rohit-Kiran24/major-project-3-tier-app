@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Chat — Three-Tier Chat{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>💬 Rooms</h2>
+            <button class="btn btn-sm" onclick="toggleNewRoom()" title="Create room">+</button>
+        </div>
+
+        <!-- New Room Form (hidden by default) -->
+        <div class="new-room-form" id="newRoomForm" style="display:none;">
+            <input type="text" id="newRoomName" placeholder="Room name..." maxlength="50">
+            <button class="btn btn-sm btn-primary" onclick="createRoom()">Create</button>
+        </div>
+
+        <!-- Room List -->
+        <div class="room-list" id="roomList">
+            {% for room in rooms %}
+            <div class="room-item {% if loop.first %}active{% endif %}"
+                 data-room="{{ room.name }}" onclick="switchRoom('{{ room.name }}')">
+                <span class="room-icon">#</span>
+                <span class="room-name">{{ room.name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- User Info -->
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span class="user-avatar">{{ user.username[0]|upper }}</span>
+                <span class="user-name">{{ user.username }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-logout" title="Logout">↗</a>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+        <div class="chat-header">
+            <button class="btn btn-sm sidebar-toggle" onclick="toggleSidebar()">☰</button>
+            <h3 id="currentRoomTitle"># general</h3>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="messages-loading" id="messagesLoading">Loading messages...</div>
+        </div>
+
+        <div class="chat-input-area">
+            <form id="messageForm" onsubmit="sendMessage(event)">
+                <input type="text" id="messageInput" placeholder="Type a message..."
+                       autocomplete="off" maxlength="2000">
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CURRENT_USER = "{{ user.username }}";
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
