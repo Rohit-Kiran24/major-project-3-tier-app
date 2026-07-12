@@ -1,21 +1,32 @@
-"""Unit tests for chat API routes."""
+"""Unit tests for chat API routes — uses SQLite in-memory, no real DB needed."""
+import os
 import pytest
+
+# Override env BEFORE importing app so Config picks up test values
+os.environ['USE_SECRETS_MANAGER'] = 'false'
+os.environ['DB_HOST'] = 'localhost'
+os.environ['DB_NAME'] = 'test'
+os.environ['DB_USER'] = 'test'
+os.environ['DB_PASS'] = 'test'
+os.environ['SECRET_KEY'] = 'ci-test-secret-key'
+
 from app import create_app
 from models import db, User, Room
 
 
 @pytest.fixture
 def app():
-    import os
-    os.environ['USE_SECRETS_MANAGER'] = 'false'
+    application = create_app()
+    application.config['TESTING'] = True
+    application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-
-    with app.app_context():
+    with application.app_context():
         db.create_all()
-        yield app
+        # Seed a default room (normally created by create_app, but SQLite starts fresh)
+        if not Room.query.filter_by(name='general').first():
+            db.session.add(Room(name='general', description='General discussion'))
+            db.session.commit()
+        yield application
         db.drop_all()
 
 
@@ -26,7 +37,7 @@ def client(app):
 
 @pytest.fixture
 def auth_client(client, app):
-    """Client with authenticated user."""
+    """A test client that is already logged in."""
     with app.app_context():
         user = User(username='chatuser')
         user.set_password('password123')
@@ -36,23 +47,24 @@ def auth_client(client, app):
     client.post('/login', data={
         'username': 'chatuser',
         'password': 'password123'
-    })
+    }, follow_redirects=True)
     return client
 
 
-def test_get_rooms_unauthenticated(client):
+def test_get_rooms_redirects_when_unauthenticated(client):
+    """Unauthenticated users should be redirected to login."""
     response = client.get('/api/rooms')
     assert response.status_code in [302, 401]
 
 
-def test_get_rooms_authenticated(auth_client):
+def test_get_rooms_when_authenticated(auth_client):
     response = auth_client.get('/api/rooms')
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
 
 
-def test_create_room(auth_client):
+def test_create_new_room(auth_client):
     response = auth_client.post('/api/rooms',
         json={'name': 'test-room', 'description': 'A test room'},
         content_type='application/json'
@@ -62,7 +74,7 @@ def test_create_room(auth_client):
     assert data['name'] == 'test-room'
 
 
-def test_create_duplicate_room(auth_client):
+def test_create_duplicate_room_returns_conflict(auth_client):
     auth_client.post('/api/rooms',
         json={'name': 'dup-room'},
         content_type='application/json'
@@ -74,7 +86,7 @@ def test_create_duplicate_room(auth_client):
     assert response.status_code == 409
 
 
-def test_get_messages(auth_client, app):
+def test_get_messages_for_general_room(auth_client, app):
     with app.app_context():
         room = Room.query.filter_by(name='general').first()
         if room:

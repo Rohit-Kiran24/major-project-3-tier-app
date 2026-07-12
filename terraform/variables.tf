@@ -118,4 +118,5 @@ variable "asg_max" {
 variable "alert_email" {
   description = "Email address for CloudWatch alarm notifications"
   type        = string
+  default     = "alerts@example.com"
 }

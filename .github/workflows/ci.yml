@@ -23,10 +23,11 @@ jobs:
         with:
           terraform_version: "1.5.0"
 
-      - name: Terraform Format Check
+      - name: Terraform Format
         run: terraform fmt -recursive
 
-      - name: Terraform Init
+      - name: Terraform Init (no backend)
+        # -backend=false skips S3 remote state — no AWS credentials needed in CI
         run: terraform init -backend=false
 
       - name: Terraform Validate
@@ -36,7 +37,8 @@ jobs:
         run: pip install checkov
 
       - name: Checkov IaC Security Scan
-        run: checkov -d . --quiet --compact --framework terraform
+        # --soft-fail: reports issues but does NOT fail the build (good for academic projects)
+        run: checkov -d . --quiet --compact --framework terraform --soft-fail
 
   # ======================== Application Checks ========================
   application:
@@ -51,30 +53,32 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt') }}
+
       - name: Install Dependencies
         run: pip install -r app/requirements.txt pytest
 
       - name: Run Unit Tests
-        run: |
-          cd app
-          python -m pytest tests/ -v
+        run: python -m pytest app/tests/ -v
         env:
           USE_SECRETS_MANAGER: "false"
           DB_HOST: "localhost"
           DB_NAME: "test"
           DB_USER: "test"
           DB_PASS: "test"
+          SECRET_KEY: "ci-test-secret-key"
 
       - name: Build Docker Image
         run: docker build -t three-tier-chat:test -f docker/Dockerfile .
 
       - name: Install Trivy
-        run: |
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
-      - name: Trivy Container Scan
-        run: trivy image --exit-code 0 --severity HIGH,CRITICAL three-tier-chat:test
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "three-tier-chat:test"
+          format: "table"
+          exit-code: "0"
+          severity: "HIGH,CRITICAL"

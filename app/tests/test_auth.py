@@ -1,27 +1,31 @@
-"""Unit tests for authentication routes."""
+"""Unit tests for authentication routes — uses SQLite in-memory so no real DB needed."""
+import os
 import pytest
+
+# Override env BEFORE importing app so Config picks up test values
+os.environ['USE_SECRETS_MANAGER'] = 'false'
+os.environ['DB_HOST'] = 'localhost'
+os.environ['DB_NAME'] = 'test'
+os.environ['DB_USER'] = 'test'
+os.environ['DB_PASS'] = 'test'
+os.environ['SECRET_KEY'] = 'ci-test-secret-key'
+
 from app import create_app
 from models import db, User
 
 
 @pytest.fixture
 def app():
-    """Create test application."""
-    import os
-    os.environ['DB_HOST'] = 'localhost'
-    os.environ['DB_NAME'] = 'test_chatapp'
-    os.environ['DB_USER'] = 'chatadmin'
-    os.environ['DB_PASS'] = 'testpass'
-    os.environ['USE_SECRETS_MANAGER'] = 'false'
+    """Create test application with in-memory SQLite (no PostgreSQL needed)."""
+    application = create_app()
+    application.config['TESTING'] = True
+    # Override PostgreSQL URI with SQLite so tests run without a real DB
+    application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    application.config['WTF_CSRF_ENABLED'] = False
 
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['WTF_CSRF_ENABLED'] = False
-
-    with app.app_context():
+    with application.app_context():
         db.create_all()
-        yield app
+        yield application
         db.drop_all()
 
 
@@ -88,9 +92,11 @@ def test_login_invalid_credentials(client):
     assert b'Invalid' in response.data
 
 
-def test_health_endpoint(client):
+def test_health_endpoint_returns_json(client):
     response = client.get('/health')
+    # 200 (all good) or 503 (degraded — expected in CI with no real DB/Redis)
     assert response.status_code in [200, 503]
     data = response.get_json()
+    assert data is not None
     assert 'status' in data
     assert 'database' in data
