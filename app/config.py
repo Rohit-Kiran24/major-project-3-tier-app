@@ -56,8 +56,12 @@ class Config:
                 raise
 
         # Build SQLAlchemy URI
-        Config.SQLALCHEMY_DATABASE_URI = (
+        built_uri = (
             f"postgresql://{Config.DB_USER}:{Config.DB_PASS}"
             f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
+        )
+        # Allow full override via env var (used by pytest / SQLite in CI)
+        Config.SQLALCHEMY_DATABASE_URI = os.environ.get(
+            'SQLALCHEMY_DATABASE_URI', built_uri
         )
         app.config['SQLALCHEMY_DATABASE_URI'] = Config.SQLALCHEMY_DATABASE_URI

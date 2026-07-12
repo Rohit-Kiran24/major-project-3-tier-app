@@ -1,31 +1,22 @@
-"""Unit tests for authentication routes — uses SQLite in-memory so no real DB needed."""
-import os
+"""
+Unit tests for authentication routes.
+conftest.py sets all env vars + SQLite URI before import, so no PostgreSQL needed.
+"""
 import pytest
-
-# Override env BEFORE importing app so Config picks up test values
-os.environ['USE_SECRETS_MANAGER'] = 'false'
-os.environ['DB_HOST'] = 'localhost'
-os.environ['DB_NAME'] = 'test'
-os.environ['DB_USER'] = 'test'
-os.environ['DB_PASS'] = 'test'
-os.environ['SECRET_KEY'] = 'ci-test-secret-key'
-
 from app import create_app
 from models import db, User
 
 
 @pytest.fixture
 def app():
-    """Create test application with in-memory SQLite (no PostgreSQL needed)."""
     application = create_app()
     application.config['TESTING'] = True
-    # Override PostgreSQL URI with SQLite so tests run without a real DB
-    application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     application.config['WTF_CSRF_ENABLED'] = False
 
     with application.app_context():
         db.create_all()
         yield application
+        db.session.remove()
         db.drop_all()
 
 
@@ -94,7 +85,7 @@ def test_login_invalid_credentials(client):
 
 def test_health_endpoint_returns_json(client):
     response = client.get('/health')
-    # 200 (all good) or 503 (degraded — expected in CI with no real DB/Redis)
+    # 200 = healthy, 503 = degraded (no Redis in CI — expected)
     assert response.status_code in [200, 503]
     data = response.get_json()
     assert data is not None
