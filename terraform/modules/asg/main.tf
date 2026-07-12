@@ -34,11 +34,12 @@ resource "aws_launch_template" "app" {
   }
 
   # Bootstrap script — installs Docker, pulls image, runs container
-  user_data = base64encode(templatefile("${path.module}/../../scripts/user_data.sh.tpl", {
-    region      = var.aws_region
-    secret_name = var.secret_name
-    db_host     = var.db_host
-    redis_host  = var.redis_host
+  # Path: modules/asg/ → up 3 levels → repo root → scripts/
+  user_data = base64encode(templatefile("${path.module}/../../../scripts/user_data.sh.tpl", {
+    region       = var.aws_region
+    secret_name  = var.secret_name
+    db_host      = var.db_host
+    redis_host   = var.redis_host
     docker_image = var.docker_image
   }))
 
