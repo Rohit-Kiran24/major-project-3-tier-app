@@ -64,20 +64,13 @@ resource "aws_instance" "nat" {
   source_dest_check           = false # CRITICAL for NAT functionality
   vpc_security_group_ids      = [aws_security_group.nat[0].id]
 
-  user_data = <<-EOF
-    #!/bin/bash
-    # Enable IP forwarding for NAT
-    echo 1 > /proc/sys/net/ipv4/ip_forward
-    echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+  # Bootstrap lives in scripts/ so it stays testable and avoids nested heredocs.
+  # Path: modules/vpc/ → up 3 levels → repo root → scripts/
+  user_data = file("${path.module}/../../../scripts/nat_instance.sh")
 
-    # Configure iptables for NAT masquerading
-    yum install -y iptables-services
-    iptables -t nat -A POSTROUTING -o enX0 -j MASQUERADE
-    iptables -A FORWARD -i enX0 -o enX0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-    iptables -A FORWARD -i enX0 -o enX0 -j ACCEPT
-    service iptables save
-    systemctl enable iptables
-  EOF
+  # user_data changes must rebuild the NAT box, otherwise the route keeps
+  # pointing at an instance that never applied the masquerade rule.
+  user_data_replace_on_change = true
 
   tags = {
     Name = "${var.project_name}-nat-instance"

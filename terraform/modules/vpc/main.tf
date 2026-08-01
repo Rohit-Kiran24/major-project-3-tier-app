@@ -86,8 +86,12 @@ resource "aws_elasticache_subnet_group" "main" {
   }
 }
 
-# ---------- Elastic IP for NAT ----------
+# ---------- Elastic IP for NAT Gateway ----------
+# Only allocated when the managed NAT Gateway is in use. The NAT *instance*
+# path uses associate_public_ip_address instead, so allocating this
+# unconditionally would leave an unattached EIP — which AWS bills for.
 resource "aws_eip" "nat" {
+  count  = var.use_nat_gateway ? 1 : 0
   domain = "vpc"
 
   tags = {
@@ -165,7 +169,7 @@ resource "aws_route_table_association" "database" {
 # ---------- NAT Gateway (production option, expensive) ----------
 resource "aws_nat_gateway" "main" {
   count         = var.use_nat_gateway ? 1 : 0
-  allocation_id = aws_eip.nat.id
+  allocation_id = aws_eip.nat[0].id
   subnet_id     = aws_subnet.public[0].id
 
   tags = {

@@ -52,16 +52,37 @@ def create_app():
 
     @app.route('/health')
     def health():
-        """ALB health check — verifies DB and Redis connectivity."""
+        """
+        Liveness probe — used by the ALB target group.
+
+        Deliberately shallow: it reports only that this process is up and
+        serving. It must NOT check RDS or Redis. The ASG uses ELB health
+        checks, so a dependency blip that returned 503 here would make the
+        ALB drop the instance and the ASG terminate it — turning a brief
+        Redis hiccup into a rolling instance-replacement loop.
+
+        For dependency status use /ready.
+        """
+        return jsonify({
+            'status': 'healthy',
+            'service': 'three-tier-chat'
+        }), 200
+
+    @app.route('/ready')
+    def ready():
+        """
+        Readiness probe — deep check of RDS and Redis connectivity.
+
+        Returns 503 when a dependency is down. Intended for humans, dashboards
+        and debugging; not wired to the ALB for the reason described above.
+        """
         try:
-            # Check database
             db.session.execute(db.text('SELECT 1'))
             db_status = 'healthy'
         except Exception as e:
             db_status = f'unhealthy: {str(e)}'
 
         try:
-            # Check Redis
             import redis
             r = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT, socket_timeout=2)
             r.ping()

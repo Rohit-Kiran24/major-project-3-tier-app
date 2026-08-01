@@ -83,11 +83,29 @@ def test_login_invalid_credentials(client):
     assert b'Invalid' in response.data
 
 
-def test_health_endpoint_returns_json(client):
+def test_health_endpoint_is_shallow(client):
+    """
+    /health is the ALB liveness probe and must return 200 whenever the process
+    is serving — even with Redis down, as it is in CI. If this ever starts
+    returning 503 on a dependency failure, the ASG will terminate healthy
+    instances during a transient blip.
+    """
     response = client.get('/health')
-    # 200 = healthy, 503 = degraded (no Redis in CI — expected)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data is not None
+    assert data['status'] == 'healthy'
+    # Must not report dependency state — that belongs to /ready.
+    assert 'database' not in data
+    assert 'redis' not in data
+
+
+def test_ready_endpoint_reports_dependencies(client):
+    """/ready is the deep check: 200 healthy, 503 degraded (no Redis in CI)."""
+    response = client.get('/ready')
     assert response.status_code in [200, 503]
     data = response.get_json()
     assert data is not None
     assert 'status' in data
     assert 'database' in data
+    assert 'redis' in data

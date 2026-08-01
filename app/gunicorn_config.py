@@ -23,5 +23,9 @@ loglevel = os.environ.get("LOG_LEVEL", "info")
 # Process naming
 proc_name = "three-tier-chat"
 
-# Preload app for better memory usage
-preload_app = True
+# Preloading must stay OFF with the eventlet worker.
+# preload_app imports the application in the master process, BEFORE the eventlet
+# worker monkey-patches the standard library. Sockets created during that import
+# (psycopg2, redis) would then be unpatched blocking sockets inside a green-thread
+# runtime — a known source of hangs with Flask-SocketIO.
+preload_app = False

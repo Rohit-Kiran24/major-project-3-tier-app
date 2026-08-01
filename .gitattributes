@@ -1,0 +1,12 @@
+# Shell scripts and Terraform templates are executed on Linux (EC2 user_data).
+# Without this, a Windows checkout (core.autocrlf=true) rewrites them with CRLF,
+# and the rendered user_data starts with "#!/bin/bash\r" — which the Linux kernel
+# reports as "bad interpreter", silently killing EC2 bootstrap.
+*.sh   text eol=lf
+*.tpl  text eol=lf
+*.sql  text eol=lf
+
+# Terraform + config files: keep consistent LF in the repo.
+*.tf   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
