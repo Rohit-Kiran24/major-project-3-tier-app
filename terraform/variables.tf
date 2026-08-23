@@ -101,12 +101,12 @@ variable "instance_type" {
 
 variable "asg_desired" {
   type    = number
-  default = 1
+  default = 2
 }
 
 variable "asg_min" {
   type    = number
-  default = 1
+  default = 2
 }
 
 variable "asg_max" {

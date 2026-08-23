@@ -63,7 +63,7 @@ jobs:
         run: pip install -r app/requirements.txt pytest
 
       - name: Run Unit Tests
-        run: python -m pytest app/tests/ -v
+        run: python -m pytest app/tests/ terraform/modules/ -v
         env:
           USE_SECRETS_MANAGER: "false"
           DB_HOST: "localhost"
