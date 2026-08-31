@@ -367,7 +367,8 @@ insufficient.
 
 Stage-I reports design and static verification; live deployment measurements are not
 yet available. The NAT instance constitutes a single point of failure for egress.
-Policy scanning currently operates in non-blocking mode. TLS termination is designed
+Policy scanning is enforcing, though 32 findings are suppressed by documented
+justified skips rather than remediated. TLS termination is designed
 but not enabled, pending certificate provisioning. Cost figures are indicative list
 prices and require verification against current published rates.
 
@@ -391,7 +392,7 @@ correctness while offering limited assurance of operational viability.
 
 Future work comprises live deployment with empirical measurement of scaling latency,
 failover time and availability; enabling TLS termination; migration of the deployment
-pipeline to OIDC-federated credentials; elimination of non-blocking policy scanning;
+pipeline to OIDC-federated credentials; reduction of the justified-skip set;
 and replacement of static infrastructure assertions with behavioural testing using
 `terraform test` or ephemeral-environment integration testing.
 

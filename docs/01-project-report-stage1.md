@@ -644,7 +644,13 @@ prevent concurrent applies from corrupting state.
 - Complete Flask application: authentication, rooms, real-time messaging, persistence
 - Multi-stage Dockerfile (non-root user, health check); docker-compose for local development
 - GitHub Actions CI and CD workflows
-- **153 automated tests passing** — 13 application tests and 140 infrastructure module tests
+- **153 automated tests passing** — 13 application tests and 140 infrastructure module
+  tests, all executed in continuous integration
+- **Policy-as-code scanning enforcing** — 39 initial Checkov findings triaged: 10
+  remediated in code (IMDSv2 enforcement, encrypted root volumes, invalid-header
+  dropping, VPC default security group restricted to zero rules, SNS encryption, RDS
+  hardening) and 32 documented as justified skips. Final state: 96 passed, 0 failed,
+  32 skipped; the scan now blocks the build on any regression
 - Repository: `github.com/Rohit-Kiran24/major-project-3-tier-app` — CI badge green
 
 ## 5.2 Verification Strategy and Its Limits
@@ -653,7 +659,7 @@ prevent concurrent applies from corrupting state.
 |-------|------|----------------|----------------------|
 | Formatting | `terraform fmt` | Canonical style | Nothing about behaviour |
 | Configuration | `terraform validate` | Parses, types check, references resolve | **Never contacts AWS**; cannot detect a valid-but-non-functional design |
-| Policy | Checkov | Compliance against a security rule set | Only encoded rules; currently `--soft-fail` |
+| Policy | Checkov | Compliance against a security rule set; **blocks the build on any regression** | Only rules encoded in the ruleset; 32 findings carry documented justified skips |
 | Module structure | pytest (140) | Required resources, variables, outputs and security settings are declared | Static string matching — passes even if the deployed system fails |
 | Application | pytest (13) | Routes, authentication, persistence logic | Runs on SQLite, not PostgreSQL |
 | Container | Trivy | Known CVEs in image layers | Nothing about runtime configuration |
@@ -684,10 +690,12 @@ al. [7], and it is the principal experiential contribution of Stage-I.
 
 1. HTTPS not yet enabled — ALB serves HTTP; ACM certificate required (code written, commented)
 2. NAT instance is a single point of failure for egress
-3. Checkov runs with `--soft-fail`; findings are reported but do not block
-4. Infrastructure module tests are static string matching, not behavioural
-5. CD workflow uses long-lived AWS access keys; OIDC federation is preferable
-6. Live deployment not yet executed — no empirical measurements exist
+3. Infrastructure module tests are static string matching, not behavioural
+4. CD workflow uses long-lived AWS access keys; OIDC federation is preferable
+5. Live deployment not yet executed — no empirical measurements exist
+6. 32 Checkov findings are suppressed by justified skip annotations rather than
+   remediated; the majority are cost-driven or deferred to Stage-II, and each carries
+   an inline justification
 
 ---
 
@@ -712,7 +720,7 @@ al. [7], and it is the principal experiential contribution of Stage-I.
 | 4 | Load testing; observe and record scaling behaviour | Scaling measurements |
 | 5 | Failure injection (terminate an instance; verify ASG replacement) | Resilience report |
 | 6 | Enable HTTPS via ACM; migrate CD to GitHub OIDC | Hardened deployment |
-| 7 | Resolve Checkov findings; remove `--soft-fail` | Clean policy scan |
+| 7 | Re-evaluate Stage-II-deferred Checkov skips (TLS, WAF, flow logs, deletion protection) | Reduced skip count |
 | 8 | Cost measurement and comparative analysis | Cost report |
 | 9 | Final documentation and research paper completion | Stage-II report |
 

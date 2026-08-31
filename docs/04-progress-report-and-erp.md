@@ -66,6 +66,8 @@ the review on 13-08 you need time for your supervisor to respond and sign.
 **Verification**
 - 153 automated tests passing — 13 application, 140 infrastructure module tests
 - `terraform validate` passing; dependency graph confirmed acyclic
+- Checkov policy scanning made enforcing: 39 findings triaged into 10 code
+  remediations and 32 justified skips; final state 96 passed, 0 failed, 32 skipped
 - CI green on every push to `main`
 
 **Defect analysis**
@@ -108,7 +110,7 @@ the review on 13-08 you need time for your supervisor to respond and sign.
 4. Load testing; record auto-scaling behaviour and response times
 5. Failure injection — terminate an instance and measure ASG replacement time
 6. Enable HTTPS via ACM; migrate the CD pipeline to GitHub OIDC federation
-7. Resolve Checkov findings and remove `--soft-fail`
+7. Re-evaluate the Stage-II-deferred Checkov skips (TLS, WAF, flow logs)
 8. Measure and compare actual cost across both configurations
 9. Complete Stage-II report and finalise the research paper
 

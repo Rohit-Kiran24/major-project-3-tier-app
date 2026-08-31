@@ -431,8 +431,12 @@ Worked example:
 **Q: What do Checkov and Trivy do?**
 > Checkov is policy-as-code for infrastructure — it scans Terraform for misconfiguration
 > like unencrypted storage or open security groups. Trivy scans the built container
-> image for known CVEs. Both run on every push. Being honest: Checkov currently runs in
-> soft-fail mode, so it reports without blocking. Removing that is on our Stage-II plan.
+> image for known CVEs. Both run on every push, and Checkov is **enforcing** — it fails
+> the build, it doesn't just warn. We started with 39 findings. We fixed 10 in code —
+> IMDSv2 enforcement, encrypted root volumes, dropping invalid HTTP headers, restricting
+> the VPC default security group to zero rules, SNS encryption and RDS hardening — and
+> we documented the remaining 32 as justified skips with an inline reason on each.
+> Current state is 96 passed, 0 failed, 32 skipped.
 
 **Q: Why no SSH keys?**
 > We use AWS Systems Manager Session Manager instead. It gives shell access through the
