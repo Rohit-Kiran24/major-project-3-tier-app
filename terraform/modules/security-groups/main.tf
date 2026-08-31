@@ -11,6 +11,8 @@
 
 # ---------- ALB Security Group (Presentation Tier) ----------
 resource "aws_security_group" "alb" {
+  #checkov:skip=CKV_AWS_260:ALB is the public entry point — must accept HTTP/80 from the internet by design
+  #checkov:skip=CKV2_AWS_5:SG is attached to ALB in root module — Checkov cannot trace cross-module references
   name        = "${var.project_name}-alb-sg"
   description = "Allow HTTP/HTTPS from internet to ALB"
   vpc_id      = var.vpc_id
@@ -50,6 +52,7 @@ resource "aws_security_group" "alb" {
 
 # ---------- App Security Group (Application Tier) ----------
 resource "aws_security_group" "app" {
+  #checkov:skip=CKV2_AWS_5:SG is attached to ASG launch template in root module — Checkov cannot trace cross-module references
   name        = "${var.project_name}-app-sg"
   description = "Allow traffic from ALB only, SSH from bastion"
   vpc_id      = var.vpc_id
@@ -115,6 +118,7 @@ resource "aws_security_group" "app" {
 
 # ---------- Database Security Group (Data Tier) ----------
 resource "aws_security_group" "db" {
+  #checkov:skip=CKV2_AWS_5:SG is attached to RDS instance in root module — Checkov cannot trace cross-module references
   name        = "${var.project_name}-db-sg"
   description = "Allow PostgreSQL from App tier ONLY"
   vpc_id      = var.vpc_id
@@ -146,6 +150,7 @@ resource "aws_security_group" "db" {
 
 # ---------- Redis Security Group ----------
 resource "aws_security_group" "redis" {
+  #checkov:skip=CKV2_AWS_5:SG is attached to ElastiCache cluster in root module — Checkov cannot trace cross-module references
   name        = "${var.project_name}-redis-sg"
   description = "Allow Redis from App tier ONLY"
   vpc_id      = var.vpc_id
@@ -175,6 +180,7 @@ resource "aws_security_group" "redis" {
 
 # ---------- Bastion Security Group (optional) ----------
 resource "aws_security_group" "bastion" {
+  #checkov:skip=CKV2_AWS_5:SG is conditionally attached to bastion instance — Checkov cannot trace cross-module references
   count       = var.deploy_bastion ? 1 : 0
   name        = "${var.project_name}-bastion-sg"
   description = "Allow SSH from admin IP only"

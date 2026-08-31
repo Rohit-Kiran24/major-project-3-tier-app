@@ -6,6 +6,7 @@
 ###############################################################################
 
 resource "aws_elasticache_cluster" "redis" {
+  #checkov:skip=CKV_AWS_134:Redis is a stateless pub/sub backplane — no data persistence needed, backup adds cost
   cluster_id           = "${var.project_name}-redis"
   engine               = "redis"
   engine_version       = "7.0"

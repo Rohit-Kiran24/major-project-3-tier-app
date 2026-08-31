@@ -11,6 +11,8 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_credentials" {
+  #checkov:skip=CKV_AWS_149:Default AWS-managed encryption sufficient — CMK adds cost with no security benefit for this use case
+  #checkov:skip=CKV2_AWS_57:Automatic rotation requires Lambda function — out of scope for academic project
   name                    = "${var.project_name}/db-credentials"
   description             = "RDS database credentials for ${var.project_name}"
   recovery_window_in_days = 0 # Allow immediate deletion for dev (set 7+ for prod)

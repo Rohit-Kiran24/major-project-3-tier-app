@@ -33,6 +33,13 @@ resource "aws_launch_template" "app" {
     name = var.instance_profile_name
   }
 
+  metadata_options {
+    #checkov:skip=CKV_AWS_341:Hop limit 2 required — app runs in Docker containers which add a network hop to reach IMDS
+    http_endpoint               = "enabled"
+    http_tokens                 = "required" # Enforce IMDSv2
+    http_put_response_hop_limit = 2
+  }
+
   # Bootstrap script — installs Docker, pulls image, runs container
   # Path: modules/asg/ → up 3 levels → repo root → scripts/
   user_data = base64encode(templatefile("${path.module}/../../../scripts/user_data.sh.tpl", {

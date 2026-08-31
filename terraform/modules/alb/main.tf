@@ -7,12 +7,17 @@
 ###############################################################################
 
 resource "aws_lb" "main" {
+  #checkov:skip=CKV_AWS_91:Access logging requires dedicated S3 bucket — deferred to reduce cost in academic deployment
+  #checkov:skip=CKV_AWS_150:Deletion protection disabled to allow easy teardown of academic environment
+  #checkov:skip=CKV2_AWS_20:HTTP-to-HTTPS redirect deferred to Stage-II pending ACM certificate
+  #checkov:skip=CKV2_AWS_28:WAF adds significant cost — out of scope for cost-constrained academic project
   name               = "${var.project_name}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [var.alb_sg_id]
   subnets            = var.public_subnet_ids
 
+  drop_invalid_header_fields = true
   enable_deletion_protection = false # Set true for production
 
   tags = {
@@ -23,6 +28,7 @@ resource "aws_lb" "main" {
 
 # Target Group — routes to Flask app on port 5000
 resource "aws_lb_target_group" "app" {
+  #checkov:skip=CKV_AWS_378:Internal ALB-to-app traffic uses HTTP — TLS termination at ALB planned for Stage-II
   name     = "${var.project_name}-app-tg"
   port     = 5000
   protocol = "HTTP"
@@ -53,6 +59,8 @@ resource "aws_lb_target_group" "app" {
 
 # HTTP Listener (port 80) — default for testing without SSL
 resource "aws_lb_listener" "http" {
+  #checkov:skip=CKV_AWS_2:HTTPS listener deferred to Stage-II pending ACM certificate
+  #checkov:skip=CKV_AWS_103:TLS policy not applicable to HTTP listener — HTTPS deferred to Stage-II
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"

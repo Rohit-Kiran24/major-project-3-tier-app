@@ -37,8 +37,8 @@ jobs:
         run: pip install checkov
 
       - name: Checkov IaC Security Scan
-        # --soft-fail: reports issues but does NOT fail the build (good for academic projects)
-        run: checkov -d . --quiet --compact --framework terraform --soft-fail
+        # All findings triaged: fixed in code or skipped with documented justification
+        run: checkov -d . --quiet --compact --framework terraform
 
   # ======================== Application Checks ========================
   application:

@@ -8,12 +8,24 @@
 
 # ---------- VPC ----------
 resource "aws_vpc" "main" {
+  #checkov:skip=CKV2_AWS_11:VPC flow logging adds CloudWatch cost — deferred to Stage-II
+  #checkov:skip=CKV2_AWS_12:Default SG restricted via aws_default_security_group resource below
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
     Name = "${var.project_name}-vpc"
+  }
+}
+
+# Restrict the VPC default security group — no ingress or egress allowed
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+  # No ingress or egress rules = all traffic blocked on the default SG
+
+  tags = {
+    Name = "${var.project_name}-default-sg-restricted"
   }
 }
 
@@ -28,6 +40,7 @@ resource "aws_internet_gateway" "main" {
 
 # ---------- Public Subnets (Presentation Tier) ----------
 resource "aws_subnet" "public" {
+  #checkov:skip=CKV_AWS_130:Public subnets intentionally assign public IPs — required for ALB and NAT instance
   count                   = length(var.availability_zones)
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidrs[count.index]
