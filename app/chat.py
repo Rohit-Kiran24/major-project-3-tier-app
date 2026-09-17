@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from flask_socketio import emit, join_room, leave_room
 from models import db, Room, Message
+import ops
 
 chat_bp = Blueprint('chat', __name__)
 
@@ -18,7 +19,11 @@ chat_bp = Blueprint('chat', __name__)
 def chat_page():
     """Main chat page."""
     rooms = Room.query.order_by(Room.created_at).all()
-    return render_template('chat.html', rooms=rooms, user=current_user)
+    return render_template(
+        'chat.html', rooms=rooms, user=current_user,
+        demo_mode=ops.demo_enabled(), is_admin=ops.is_admin(),
+        served_by=ops.short_id(), served_az=ops.get_identity()['az'],
+    )
 
 
 @chat_bp.route('/api/rooms', methods=['GET'])
@@ -81,6 +86,7 @@ def register_socket_events(socketio):
     def handle_connect():
         if not current_user.is_authenticated:
             return False  # Reject unauthenticated connections
+        ops.inc_connections()
         emit('status', {'msg': f'{current_user.username} connected'})
 
     @socketio.on('join')
@@ -121,17 +127,24 @@ def register_socket_events(socketio):
         db.session.add(msg)
         db.session.commit()
 
-        # Broadcast to ALL instances via Redis pub/sub
+        ops.note_message()
+
+        # Broadcast to ALL instances via Redis pub/sub.
+        # served_by/az travel with the message so the UI can show which instance
+        # handled it — visible proof that delivery crosses instances.
         emit('new_message', {
             'id': msg.id,
             'content': content,
             'username': current_user.username,
             'room': room_name,
-            'created_at': msg.created_at.isoformat()
+            'created_at': msg.created_at.isoformat(),
+            'served_by': ops.short_id(),
+            'az': ops.get_identity()['az'],
         }, room=room_name)
 
     @socketio.on('disconnect')
     def handle_disconnect():
+        ops.dec_connections()
         if current_user.is_authenticated:
             emit('status', {
                 'msg': f'{current_user.username} disconnected'

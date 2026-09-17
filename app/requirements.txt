@@ -10,3 +10,4 @@ eventlet==0.35.1
 boto3==1.34.0
 redis==5.0.1
 python-dotenv==1.0.0
+psutil==5.9.8

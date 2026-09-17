@@ -18,6 +18,36 @@ services:
       - REDIS_PORT=6379
       - USE_SECRETS_MANAGER=false
       - SECRET_KEY=${FLASK_SECRET_KEY}
+      - DEMO_MODE=true
+      - ADMIN_USERS=${ADMIN_USERS:-rohit}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Second app instance. Two containers sharing one Redis reproduce the
+  # cross-instance delivery problem locally, so the "via <server>" tags and the
+  # cluster view can be verified without paying for AWS.
+  app2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=chatapp
+      - DB_USER=${POSTGRES_USER:-chatadmin}
+      - DB_PASS=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - USE_SECRETS_MANAGER=false
+      - SECRET_KEY=${FLASK_SECRET_KEY}
+      - DEMO_MODE=true
+      - ADMIN_USERS=${ADMIN_USERS:-rohit}
     depends_on:
       db:
         condition: service_healthy

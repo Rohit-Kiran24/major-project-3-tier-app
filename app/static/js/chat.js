@@ -167,12 +167,21 @@ function appendMessage(data) {
 
     const div = document.createElement('div');
     div.className = `message ${isOwn ? 'own' : 'other'}`;
+    // served_by is present on live messages only (history is not tagged).
+    // Two browsers showing different values is direct proof that delivery
+    // crossed instances through the Redis backplane.
+    const via = data.served_by
+        ? `<div class="message-via">via ${escapeHtml(data.served_by)}` +
+          `${data.az ? ' · ' + escapeHtml(data.az) : ''}</div>`
+        : '';
+
     div.innerHTML = `
         <div class="message-header">
             <span class="message-author">${escapeHtml(data.username)}</span>
             <span class="message-time">${time}</span>
         </div>
         <div class="message-content">${escapeHtml(data.content)}</div>
+        ${via}
     `;
 
     container.appendChild(div);

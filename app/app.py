@@ -40,6 +40,12 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp)
 
+    # Ops Console — registered only when DEMO_MODE=true, so the demo and chaos
+    # endpoints simply do not exist in a normal deployment.
+    import ops
+    if ops.demo_enabled():
+        app.register_blueprint(ops.ops_bp)
+
     # ======================== Health Check Routes ========================
 
     @app.route('/')
@@ -131,6 +137,11 @@ socketio = SocketIO(
 
 # Register WebSocket event handlers
 register_socket_events(socketio)
+
+# Ops Console background tasks (metrics publisher + spike listener).
+# No-op unless DEMO_MODE=true, and skipped under pytest via OPS_BACKGROUND=false.
+import ops as _ops
+_ops.init(socketio)
 
 # ======================== Dev Server ========================
 if __name__ == '__main__':

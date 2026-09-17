@@ -1,0 +1,201 @@
+/* ==========================================================================
+   Ops Console — right-hand panel
+   Structure follows the 2-tier project's sidebar (stat tiles, load bars,
+   node cards, colour-coded controls, monospace event log), restyled for this
+   app's theme and extended with charts.
+   ========================================================================== */
+
+/* ---------- Light theme (mirrors the 2-tier look) ---------- */
+html[data-theme="light"] {
+    --bg-primary: #f5f5f4;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #ececea;
+    --bg-card: #ffffff;
+    --bg-hover: rgba(37, 99, 235, 0.07);
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b66;
+    --text-muted: #9a9a94;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-glow: rgba(37, 99, 235, 0.18);
+    --border: rgba(0, 0, 0, 0.10);
+    --border-active: rgba(37, 99, 235, 0.35);
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Layout ---------- */
+.chat-layout.with-ops { display: flex; }
+
+.ops {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: margin-right .2s ease;
+}
+.ops.hidden { margin-right: -320px; }
+
+.ops-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-tertiary);
+}
+.ops-title { font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+.ops-head-right { display: flex; align-items: center; gap: 6px; }
+
+.icon-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-secondary);
+    border-radius: var(--radius-sm); cursor: pointer;
+    width: 24px; height: 24px; line-height: 1; font-size: 12px;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--success);
+    display: inline-block; margin-right: 4px; animation: blink 2s infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: .25 } }
+
+.badge {
+    font-size: 9px; font-weight: 700; letter-spacing: .04em;
+    padding: 2px 8px; border-radius: 99px; text-transform: uppercase;
+    background: var(--bg-hover); color: var(--accent);
+    border: 1px solid var(--border-active);
+}
+.badge.warn { color: var(--warning); border-color: var(--warning); }
+
+.ops-body { flex: 1; overflow-y: auto; }
+.ops-sec { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.ops-sec-title {
+    font-size: 9px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px;
+}
+.dim { color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+
+/* ---------- Tier rows ---------- */
+.tier {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; font-size: 11px;
+}
+.tier-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-muted); flex-shrink: 0;
+}
+.tier.ok   .tier-dot { background: var(--success); }
+.tier.warn .tier-dot { background: var(--warning); }
+.tier.bad  .tier-dot { background: var(--error); }
+.tier-name { flex: 1; color: var(--text-secondary); }
+.tier-val { font-weight: 600; font-family: ui-monospace, monospace; font-size: 10px; }
+
+/* ---------- Stat tiles ---------- */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stat { background: var(--bg-tertiary); border-radius: var(--radius-sm); padding: 8px 10px; }
+.stat-val { font-size: 19px; font-weight: 600; line-height: 1.1; }
+.stat-lbl { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+/* ---------- Load bars ---------- */
+.bar-wrap { margin-bottom: 8px; }
+.bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--text-muted); margin-bottom: 4px;
+}
+.bar-bg { height: 5px; background: var(--bg-tertiary); border-radius: 99px; overflow: hidden; }
+.bar-fill { height: 100%; width: 0; border-radius: 99px; background: var(--accent); transition: width .4s ease; }
+.bar-fill.mem { background: var(--success); }
+
+/* ---------- Charts ---------- */
+.chart-box { height: 150px; position: relative; }
+
+/* ---------- Server cards ---------- */
+.node-list { display: flex; flex-direction: column; gap: 6px; }
+.node {
+    border: 1px solid var(--border); border-left: 3px solid var(--text-muted);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 8px 10px;
+}
+.node.inservice  { border-left-color: var(--success); }
+.node.pending    { border-left-color: var(--warning); }
+.node.terminating{ border-left-color: var(--error); }
+.node.me         { background: var(--bg-hover); }
+.node-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.node-name { font-size: 11px; font-weight: 600; font-family: ui-monospace, monospace; }
+.node-badge { font-size: 9px; padding: 1px 7px; border-radius: 99px; font-weight: 600; background: var(--bg-tertiary); }
+.node-meta { display: flex; gap: 10px; font-size: 10px; color: var(--text-muted); }
+.node-meta b { color: var(--text-primary); font-weight: 600; }
+
+/* ---------- Controls ---------- */
+.ctrl-list { display: flex; flex-direction: column; gap: 6px; }
+.ctrl-row { display: flex; gap: 6px; }
+.ctrl-row .cb { flex: 1; }
+.ops-select {
+    background: var(--bg-tertiary); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 11px; padding: 6px 8px; font-family: inherit; cursor: pointer;
+}
+.cb {
+    padding: 7px 10px; border-radius: var(--radius-sm);
+    font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit;
+    border: 1px solid var(--border); background: var(--bg-tertiary);
+    color: var(--text-primary); text-align: left; width: 100%;
+    transition: var(--transition);
+}
+.cb:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--border-active); }
+.cb:active:not(:disabled) { transform: scale(.98); }
+.cb:disabled { opacity: .45; cursor: not-allowed; }
+.cb.primary { border-color: var(--accent); color: var(--accent-hover); }
+.cb.danger  { border-color: var(--error); color: var(--error); }
+.cb.success { border-color: var(--success); color: var(--success); }
+
+/* ---------- Timeline + log ---------- */
+.timeline { display: flex; flex-direction: column; gap: 6px; font-size: 10px; }
+.tl { display: flex; gap: 8px; line-height: 1.45; }
+.tl-t { color: var(--text-muted); flex-shrink: 0; font-family: ui-monospace, monospace; }
+
+.elog {
+    font-family: ui-monospace, monospace; font-size: 10px;
+    display: flex; flex-direction: column; gap: 3px;
+    max-height: 190px; overflow-y: auto;
+}
+.el { display: flex; gap: 8px; line-height: 1.45; }
+.el-t { color: var(--text-muted); flex-shrink: 0; }
+.el .ok   { color: var(--success); }
+.el .err  { color: var(--error); }
+.el .warn { color: var(--warning); }
+.el .info { color: var(--accent); }
+
+/* ---------- Chat header additions ---------- */
+.header-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.served-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; font-family: ui-monospace, monospace;
+    padding: 3px 9px; border-radius: 99px;
+    background: var(--bg-tertiary); border: 1px solid var(--border);
+    color: var(--text-secondary); white-space: nowrap;
+}
+.served-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.served-az { color: var(--text-muted); margin-left: 4px; }
+.ops-open { display: none; }
+
+/* Per-message origin tag — visible proof a message crossed instances */
+.message-via {
+    font-size: 9px; font-family: ui-monospace, monospace;
+    color: var(--text-muted); margin-top: 3px; opacity: .85;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+    .ops {
+        position: fixed; right: 0; top: 0; bottom: 0; z-index: 50;
+        box-shadow: var(--shadow);
+    }
+    .ops.hidden { margin-right: -320px; }
+    .ops-open { display: inline-flex; }
+}
+@media (max-width: 420px) {
+    .ops { width: 100%; }
+    .ops.hidden { margin-right: -100%; }
+    .served-chip { display: none; }
+}

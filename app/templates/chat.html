@@ -3,10 +3,14 @@
 
 {% block head %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+{% if demo_mode %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ops.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="chat-layout">
+<div class="chat-layout{% if demo_mode %} with-ops{% endif %}">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -46,9 +50,18 @@
         <div class="chat-header">
             <button class="btn btn-sm sidebar-toggle" onclick="toggleSidebar()">☰</button>
             <h3 id="currentRoomTitle"># general</h3>
-            <div class="connection-status" id="connectionStatus">
-                <span class="status-dot"></span>
-                <span class="status-text">Connecting...</span>
+            <div class="header-right">
+                {% if demo_mode %}
+                <span class="served-chip" title="The server handling your session">
+                    <span class="served-dot"></span>
+                    {{ served_by }}<span class="served-az">{{ served_az }}</span>
+                </span>
+                <button class="btn btn-sm ops-open" onclick="toggleOps()" title="Ops Console">&#9881;</button>
+                {% endif %}
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
             </div>
         </div>
 
@@ -64,12 +77,126 @@
             </form>
         </div>
     </main>
+
+    {% if demo_mode %}
+    <!-- ======================== OPS CONSOLE ======================== -->
+    <aside class="ops" id="opsPanel">
+        <div class="ops-head">
+            <span class="ops-title"><span class="live-dot"></span> Ops Console</span>
+            <span class="ops-head-right">
+                <span class="badge" id="opsMode">...</span>
+                <button class="icon-btn" onclick="toggleTheme()" title="Light / dark">&#9788;</button>
+                <button class="icon-btn" onclick="toggleOps()" title="Hide">&rsaquo;</button>
+            </span>
+        </div>
+
+        <div class="ops-body">
+            <section class="ops-sec">
+                <div class="ops-sec-title">Architecture</div>
+                <div class="tier" id="tierWeb">
+                    <span class="tier-dot"></span>
+                    <span class="tier-name">Presentation</span>
+                    <span class="tier-val" id="tierWebVal">&mdash;</span>
+                </div>
+                <div class="tier" id="tierApp">
+                    <span class="tier-dot"></span>
+                    <span class="tier-name">Application</span>
+                    <span class="tier-val" id="tierAppVal">&mdash;</span>
+                </div>
+                <div class="tier" id="tierData">
+                    <span class="tier-dot"></span>
+                    <span class="tier-name">Data</span>
+                    <span class="tier-val" id="tierDataVal">&mdash;</span>
+                </div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Cluster stats</div>
+                <div class="stat-grid">
+                    <div class="stat"><div class="stat-val" id="stServers">&mdash;</div><div class="stat-lbl">Servers</div></div>
+                    <div class="stat"><div class="stat-val" id="stConns">&mdash;</div><div class="stat-lbl">Connections</div></div>
+                    <div class="stat"><div class="stat-val" id="stMsgs">&mdash;</div><div class="stat-lbl">Msgs / min</div></div>
+                    <div class="stat"><div class="stat-val" id="stUptime">&mdash;</div><div class="stat-lbl">Uptime</div></div>
+                </div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Load &mdash; this server</div>
+                <div class="bar-wrap">
+                    <div class="bar-label"><span>CPU</span><span id="cpuV">&mdash;</span></div>
+                    <div class="bar-bg"><div class="bar-fill" id="cpuB"></div></div>
+                </div>
+                <div class="bar-wrap">
+                    <div class="bar-label"><span>Memory</span><span id="memV">&mdash;</span></div>
+                    <div class="bar-bg"><div class="bar-fill mem" id="memB"></div></div>
+                </div>
+                <div class="bar-label"><span>DB / Redis</span><span id="depV">&mdash;</span></div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">CPU &amp; servers</div>
+                <div class="chart-box"><canvas id="cpuChart"></canvas></div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Traffic &amp; latency</div>
+                <div class="chart-box"><canvas id="trafficChart"></canvas></div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Servers</div>
+                <div class="node-list" id="nodeList"><div class="dim">Loading...</div></div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Controls</div>
+                {% if is_admin %}
+                <div class="ctrl-list">
+                    <div class="ctrl-row">
+                        <select id="spikeMins" class="ops-select">
+                            <option value="3">3 min</option>
+                            <option value="5" selected>5 min</option>
+                            <option value="8">8 min</option>
+                        </select>
+                        <button class="cb primary" id="spikeBtn" onclick="doSpike()">Spike load</button>
+                    </div>
+                    <button class="cb" onclick="doScale(1)">Scale now +1</button>
+                    <button class="cb" onclick="doScale(-1)">Scale back &minus;1</button>
+                    <button class="cb danger" onclick="doHeal()">Self-heal this server</button>
+                    <div class="ctrl-row">
+                        <select id="burstCount" class="ops-select">
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                        <button class="cb success" onclick="doBurst()">Message burst</button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="dim">Read-only. Add your username to ADMIN_USERS to enable controls.</div>
+                {% endif %}
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Scaling timeline</div>
+                <div class="timeline" id="timeline"><div class="dim">&mdash;</div></div>
+            </section>
+
+            <section class="ops-sec">
+                <div class="ops-sec-title">Event log</div>
+                <div class="elog" id="elog"></div>
+            </section>
+        </div>
+    </aside>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     const CURRENT_USER = "{{ user.username }}";
+    const DEMO_MODE = {{ 'true' if demo_mode else 'false' }};
+    const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% if demo_mode %}<script src="{{ url_for('static', filename='js/ops.js') }}"></script>{% endif %}
 {% endblock %}

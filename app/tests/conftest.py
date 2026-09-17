@@ -23,6 +23,10 @@ os.environ.setdefault('DB_PASS', 'test')
 os.environ.setdefault('SECRET_KEY', 'ci-test-secret-key-not-for-production')
 os.environ.setdefault('REDIS_HOST', 'localhost')
 
+# Ops Console background tasks (metrics publisher, Redis spike listener) must not
+# start during tests — they would loop forever against a Redis that isn't there.
+os.environ.setdefault('OPS_BACKGROUND', 'false')
+
 # ── 3. Force SQLite so pytest never touches PostgreSQL ───────────────────────
 # Config.init_app() will build a postgresql:// URI from the env vars above,
 # then the test fixture immediately overrides it with SQLite.
