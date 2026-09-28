@@ -11,20 +11,18 @@
 
 {% block content %}
 <div class="chat-layout{% if demo_mode %} with-ops{% endif %}">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>💬 Rooms</h2>
+            <h2>Rooms</h2>
             <button class="btn btn-sm" onclick="toggleNewRoom()" title="Create room">+</button>
         </div>
 
-        <!-- New Room Form (hidden by default) -->
+        <!-- Hidden until the + button is pressed -->
         <div class="new-room-form" id="newRoomForm" style="display:none;">
-            <input type="text" id="newRoomName" placeholder="Room name..." maxlength="50">
+            <input type="text" id="newRoomName" placeholder="new-room" maxlength="50">
             <button class="btn btn-sm btn-primary" onclick="createRoom()">Create</button>
         </div>
 
-        <!-- Room List -->
         <div class="room-list" id="roomList">
             {% for room in rooms %}
             <div class="room-item {% if loop.first %}active{% endif %}"
@@ -35,7 +33,6 @@
             {% endfor %}
         </div>
 
-        <!-- User Info -->
         <div class="sidebar-footer">
             <div class="user-info">
                 <span class="user-avatar">{{ user.username[0]|upper }}</span>
@@ -45,7 +42,6 @@
         </div>
     </aside>
 
-    <!-- Main Chat Area -->
     <main class="chat-main">
         <div class="chat-header">
             <button class="btn btn-sm sidebar-toggle" onclick="toggleSidebar()">☰</button>
@@ -71,7 +67,7 @@
 
         <div class="chat-input-area">
             <form id="messageForm" onsubmit="sendMessage(event)">
-                <input type="text" id="messageInput" placeholder="Type a message..."
+                <input type="text" id="messageInput" placeholder="Message #general"
                        autocomplete="off" maxlength="2000">
                 <button type="submit" class="btn btn-primary">Send</button>
             </form>
@@ -79,7 +75,6 @@
     </main>
 
     {% if demo_mode %}
-    <!-- ======================== OPS CONSOLE ======================== -->
     <aside class="ops" id="opsPanel">
         <div class="ops-head">
             <span class="ops-title"><span class="live-dot"></span> Ops Console</span>
