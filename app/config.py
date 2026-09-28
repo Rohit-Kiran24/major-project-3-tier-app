@@ -55,9 +55,13 @@ class Config:
                 app.logger.error(f"❌ Unexpected error fetching secrets: {e}")
                 raise
 
-        # Build SQLAlchemy URI
+        # Build SQLAlchemy URI.
+        # The driver is named explicitly. A bare "postgresql://" lets SQLAlchemy
+        # pick the default DBAPI, and that default changed to psycopg 3 in
+        # SQLAlchemy 2.1 — which this image does not ship, so the worker failed
+        # to boot against PostgreSQL while every test still passed on SQLite.
         built_uri = (
-            f"postgresql://{Config.DB_USER}:{Config.DB_PASS}"
+            f"postgresql+psycopg2://{Config.DB_USER}:{Config.DB_PASS}"
             f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
         )
         # Allow full override via env var (used by pytest / SQLite in CI)

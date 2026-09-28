@@ -29,6 +29,14 @@ RUN chown -R chatapp:chatapp /app
 # Switch to non-root user
 USER chatapp
 
+# eventlet replaces the standard library's DNS resolver with its own green
+# implementation, which cannot resolve container and VPC service names here:
+# a lookup of the cache hostname times out after ~20 s while psycopg2 — a C
+# extension eventlet never patches — resolves the database fine. The result is
+# a silent loss of the pub/sub backplane with nothing in the log. This variable
+# keeps eventlet on the system resolver and must be set before the worker boots.
+ENV EVENTLET_NO_GREENDNS=yes
+
 # Expose Flask port
 EXPOSE 5000
 

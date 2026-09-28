@@ -1,0 +1,172 @@
+{
+  "harness": "scripts/measure_local.py",
+  "environment": {
+    "host": "Windows 11 + Docker Desktop (WSL2 backend)",
+    "stack": "docker-compose: 2 app containers, postgres:15-alpine, redis:7-alpine",
+    "note": "loopback measurements on a single host; AWS latency will be higher"
+  },
+  "runs": {
+    "latency_and_burst": {
+      "run_at": "2026-09-28T17:58:30",
+      "app_a": "http://localhost:5000",
+      "app_b": "http://localhost:5001",
+      "latency": {
+        "probes_sent": 30,
+        "cross_instance": {
+          "count": 30,
+          "mean_ms": 18.45,
+          "median_ms": 16.74,
+          "p95_ms": 33.35,
+          "max_ms": 35.33,
+          "delivered": "30 / 30"
+        },
+        "same_instance": {
+          "count": 30,
+          "mean_ms": 18.09,
+          "median_ms": 16.47,
+          "p95_ms": 33.78,
+          "max_ms": 34.62,
+          "delivered": "30 / 30"
+        },
+        "backplane_cost_ms": 0.36,
+        "backplane_cost_pct": 2.0,
+        "served_by": {
+          "same": "8cfd17bfb152",
+          "cross": "8cfd17bfb152"
+        },
+        "distinct_instances": 1,
+        "burst": {
+          "sent": 200,
+          "received_cross_instance": 200,
+          "elapsed_s": 0.69,
+          "rate_per_s": 287.9,
+          "loss": 0
+        },
+        "persisted_messages": 100
+      },
+      "unauthenticated": {
+        "rejected": true,
+        "error_type": "ConnectionError"
+      }
+    },
+    "dependency_failure": {
+      "run_at": "2026-09-28T18:03:54",
+      "app_a": "http://localhost:5000",
+      "app_b": "http://localhost:5001",
+      "failure": {
+        "probes_before_outage": {
+          "app_a": {
+            "/health": {
+              "status": 200,
+              "seconds": 0.01,
+              "within_alb_timeout_5s": true
+            },
+            "/ready": {
+              "status": 200,
+              "seconds": 0.01,
+              "within_alb_timeout_5s": true
+            }
+          },
+          "app_b": {
+            "/health": {
+              "status": 200,
+              "seconds": 0.01,
+              "within_alb_timeout_5s": true
+            },
+            "/ready": {
+              "status": 200,
+              "seconds": 0.01,
+              "within_alb_timeout_5s": true
+            }
+          }
+        },
+        "probes_during_outage": {
+          "app_a": {
+            "/health": {
+              "status": 200,
+              "seconds": 7.53,
+              "within_alb_timeout_5s": false
+            },
+            "/ready": {
+              "status": 503,
+              "seconds": 12.74,
+              "within_alb_timeout_5s": false
+            }
+          },
+          "app_b": {
+            "/health": {
+              "status": 200,
+              "seconds": 4.78,
+              "within_alb_timeout_5s": true
+            },
+            "/ready": {
+              "status": 503,
+              "seconds": 19.17,
+              "within_alb_timeout_5s": false
+            }
+          }
+        },
+        "probes_after_recovery": {
+          "app_a": {
+            "/health": {
+              "status": 200,
+              "seconds": 0.04,
+              "within_alb_timeout_5s": true
+            },
+            "/ready": {
+              "status": 200,
+              "seconds": 0.03,
+              "within_alb_timeout_5s": true
+            }
+          },
+          "app_b": {
+            "/health": {
+              "status": 200,
+              "seconds": 0.02,
+              "within_alb_timeout_5s": true
+            },
+            "/ready": {
+              "status": 200,
+              "seconds": 0.02,
+              "within_alb_timeout_5s": true
+            }
+          }
+        },
+        "websocket_clients_dropped": {
+          "sender": true,
+          "cross": true,
+          "same": true
+        },
+        "messages_attempted": 10,
+        "messages_accepted_by_client": 10,
+        "send_errors": [],
+        "delivered_same_instance": 10,
+        "delivered_cross_instance": 0
+      }
+    },
+    "recovery_45s": {
+      "run_at": "2026-09-28T18:05:49",
+      "app_a": "http://localhost:5000",
+      "app_b": "http://localhost:5001",
+      "recovery": {
+        "outage_s": 45,
+        "ready_200_after_restart_s": 0.69,
+        "delivery_resumed_after_restart_s": 15.19,
+        "window_s": 14.5,
+        "note": "positive window = /ready reported 200 while cross-instance delivery was still broken (defect D8)"
+      }
+    },
+    "recovery_5s": {
+      "run_at": "2026-09-28T18:07:02",
+      "app_a": "http://localhost:5000",
+      "app_b": "http://localhost:5001",
+      "recovery": {
+        "outage_s": 5,
+        "ready_200_after_restart_s": 1.93,
+        "delivery_resumed_after_restart_s": 3.18,
+        "window_s": 1.24,
+        "note": "positive window = /ready reported 200 while cross-instance delivery was still broken (defect D8)"
+      }
+    }
+  }
+}
