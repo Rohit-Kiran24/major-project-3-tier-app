@@ -43,3 +43,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Paper under review. Kept out of the public repo until it has been submitted:
+# similarity checkers crawl public GitHub, and a public copy of our own text can
+# come back as a matched source against our own submission. Delete this line
+# once the paper is submitted.
+docs/02-research-paper-review2.md
