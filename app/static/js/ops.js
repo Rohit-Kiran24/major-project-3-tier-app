@@ -247,6 +247,15 @@ function renderStatus(s) {
             btn.onclick = doSpike;
         }
     }
+
+    // Scale and self-heal drive a real Auto Scaling Group and do nothing off
+    // AWS — disabling them here, instead of letting the click round-trip and
+    // fail, is what tells a demo audience that before they press it rather
+    // than after.
+    const awsControls = [q('scaleUpBtn'), q('scaleDownBtn'), q('healBtn')];
+    awsControls.forEach(function (el) { if (el) el.disabled = (s.mode !== 'aws'); });
+    const hint = q('awsOnlyHint');
+    if (hint) hint.style.display = (s.mode === 'aws') ? 'none' : 'block';
 }
 
 function setTier(id, cls, val) {

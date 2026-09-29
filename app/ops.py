@@ -408,7 +408,9 @@ def heal():
 @login_required
 @admin_required
 def burst():
-    from models import db, Message, Room
+    from datetime import datetime
+    from models import db, Message, Room, iso_utc
+
     body = request.get_json(silent=True) or {}
     count = max(1, min(int(body.get('count', 100)), MAX_BURST))
     room_name = body.get('room', 'general')
@@ -417,16 +419,42 @@ def burst():
         return jsonify({'error': 'Room {} not found'.format(room_name)}), 404
 
     tag = short_id()
+    az = get_identity()['az']
+    now = datetime.utcnow()
+    contents = ['[burst {}/{}] from {}'.format(i + 1, count, tag) for i in range(count)]
+
     t0 = time.perf_counter()
+    # created_at is set explicitly rather than left to the column default so the
+    # value written to the row and the value broadcast below are the same
+    # timestamp — bulk_save_objects does not write server/ORM-evaluated defaults
+    # back onto the Python objects, so relying on msg.created_at after this call
+    # would read back an unset attribute.
     db.session.bulk_save_objects([
-        Message(content='[burst {}/{}] from {}'.format(i + 1, count, tag),
-                user_id=current_user.id, room_id=room.id)
-        for i in range(count)
+        Message(content=c, user_id=current_user.id, room_id=room.id, created_at=now)
+        for c in contents
     ])
     db.session.commit()
     write_ms = (time.perf_counter() - t0) * 1000
 
     note_message()
+
+    # bulk_save_objects is a straight INSERT — it never goes through the
+    # per-message handler in chat.py, so without this loop a burst writes rows
+    # to PostgreSQL that nobody's open browser ever sees appear. The point of
+    # the button is to watch messages arrive live, so broadcast each one the
+    # same way a normal send does.
+    from app import socketio
+    created_at = iso_utc(now)
+    for content in contents:
+        socketio.emit('new_message', {
+            'content': content,
+            'username': current_user.username,
+            'room': room_name,
+            'created_at': created_at,
+            'served_by': tag,
+            'az': az,
+        }, room=room_name)
+
     return jsonify({
         'status': 'ok',
         'count': count,

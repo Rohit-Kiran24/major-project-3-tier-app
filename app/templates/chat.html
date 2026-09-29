@@ -155,9 +155,13 @@
                         </select>
                         <button class="cb primary" id="spikeBtn" onclick="doSpike()">Spike load</button>
                     </div>
-                    <button class="cb" onclick="doScale(1)">Scale now +1</button>
-                    <button class="cb" onclick="doScale(-1)">Scale back &minus;1</button>
-                    <button class="cb danger" onclick="doHeal()">Self-heal this server</button>
+                    <div class="dim" id="spikeHint">To bring load back down, click Spike load again &mdash; it becomes Stop spike while running.</div>
+                    <button class="cb" id="scaleUpBtn" onclick="doScale(1)">Scale now +1</button>
+                    <button class="cb" id="scaleDownBtn" onclick="doScale(-1)">Scale back &minus;1</button>
+                    <button class="cb danger" id="healBtn" onclick="doHeal()">Self-heal this server</button>
+                    <div class="dim" id="awsOnlyHint" style="display:none;">
+                        Scale and self-heal act on the real Auto Scaling Group and only work once this is deployed to AWS. They will not reduce local CPU &mdash; use Stop spike for that.
+                    </div>
                     <div class="ctrl-row">
                         <select id="burstCount" class="ops-select">
                             <option value="100">100</option>
