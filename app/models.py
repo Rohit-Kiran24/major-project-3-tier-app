@@ -12,6 +12,18 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 
+def iso_utc(dt):
+    """Serialize a naive UTC datetime with an explicit 'Z' suffix.
+
+    db.Column(db.DateTime, default=datetime.utcnow) stores naive UTC values,
+    and naive isoformat() ("2026-09-29T12:47:03") carries no timezone marker.
+    The browser's `new Date(...)` then reads it as local time instead of UTC,
+    so every timestamp displayed is off by the viewer's UTC offset. Appending
+    'Z' is enough for JavaScript to parse it as UTC and convert it correctly.
+    """
+    return dt.isoformat() + 'Z'
+
+
 class User(UserMixin, db.Model):
     """User account for authentication."""
     __tablename__ = 'users'
@@ -35,7 +47,7 @@ class User(UserMixin, db.Model):
         return {
             'id': self.id,
             'username': self.username,
-            'created_at': self.created_at.isoformat()
+            'created_at': iso_utc(self.created_at)
         }
 
 
@@ -58,7 +70,7 @@ class Room(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
-            'created_at': self.created_at.isoformat()
+            'created_at': iso_utc(self.created_at)
         }
 
 
@@ -78,5 +90,5 @@ class Message(db.Model):
             'content': self.content,
             'username': self.author.username if self.author else '[deleted]',
             'room_id': self.room_id,
-            'created_at': self.created_at.isoformat()
+            'created_at': iso_utc(self.created_at)
         }

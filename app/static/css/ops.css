@@ -31,7 +31,11 @@ html[data-theme="light"] {
 .chat-layout.with-ops { display: flex; }
 
 .ops {
-    width: 320px;
+    /* Wide enough that both charts get real plotting width instead of being
+       squeezed into a sliver next to their own legends. Scales with the
+       viewport between a laptop and a wide desktop rather than a fixed size,
+       so it doesn't eat the chat column on a smaller screen. */
+    width: clamp(320px, 27vw, 460px);
     flex-shrink: 0;
     background: var(--bg-secondary);
     border-left: 1px solid var(--border);
@@ -40,7 +44,7 @@ html[data-theme="light"] {
     overflow: hidden;
     transition: margin-right .2s ease;
 }
-.ops.hidden { margin-right: -320px; }
+.ops.hidden { margin-right: clamp(-460px, -27vw, -320px); }
 
 .ops-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -112,7 +116,7 @@ html[data-theme="light"] {
 .bar-fill.mem { background: var(--success); }
 
 /* ---------- Charts ---------- */
-.chart-box { height: 150px; position: relative; }
+.chart-box { height: 190px; position: relative; }
 
 /* ---------- Server cards ---------- */
 .node-list { display: flex; flex-direction: column; gap: 6px; }
@@ -190,12 +194,13 @@ html[data-theme="light"] {
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 1100px) {
+@media (max-width: 1300px) {
     .ops {
         position: fixed; right: 0; top: 0; bottom: 0; z-index: 50;
+        width: clamp(320px, 38vw, 460px);
         box-shadow: var(--shadow);
     }
-    .ops.hidden { margin-right: -320px; }
+    .ops.hidden { margin-right: clamp(-460px, -38vw, -320px); }
     .ops-open { display: inline-flex; }
 }
 @media (max-width: 420px) {

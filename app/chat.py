@@ -6,7 +6,7 @@ Uses Flask-SocketIO with Redis message queue for cross-instance pub/sub.
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
 from flask_socketio import emit, join_room, leave_room
-from models import db, Room, Message
+from models import db, Room, Message, iso_utc
 import ops
 
 chat_bp = Blueprint('chat', __name__)
@@ -137,7 +137,7 @@ def register_socket_events(socketio):
             'content': content,
             'username': current_user.username,
             'room': room_name,
-            'created_at': msg.created_at.isoformat(),
+            'created_at': iso_utc(msg.created_at),
             'served_by': ops.short_id(),
             'az': ops.get_identity()['az'],
         }, room=room_name)
